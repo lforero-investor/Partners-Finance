@@ -1,0 +1,954 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Partners Finance · Calculadora de Meta</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --gold:#7B9EC5;--gold2:#A3BDD8;--gold3:#D4E5F4;--gold4:#EEF5FB;
+  --dark:#0E1117;--dark2:#141822;--dark3:#1A2030;--dark4:#212840;
+  --dark5:#2A334A;--dark6:#354060;
+  --text:#EDF1F8;--text2:#9AAEC4;--text3:#5A6E88;
+  --green:#2A7A52;--green2:#3DA06B;--green3:#C8F0DC;
+  --red:#8A2828;--red2:#C04040;
+  --border:rgba(123,158,197,0.15);--border2:rgba(123,158,197,0.28);
+  --radius:12px;--radius-sm:8px;
+}
+html{scroll-behavior:smooth}
+body{
+  font-family:'Syne',sans-serif;
+  background:var(--dark);color:var(--text);
+  min-height:100vh;
+  background-image:
+    radial-gradient(ellipse 60% 40% at 80% 10%, rgba(123,158,197,0.08) 0%, transparent 70%),
+    radial-gradient(ellipse 50% 50% at 10% 80%, rgba(163,189,216,0.05) 0%, transparent 60%);
+}
+
+/* --- HERO --- */
+.hero{
+  text-align:center;padding:3.5rem 1.5rem 2.5rem;
+  border-bottom:0.5px solid var(--border);
+  position:relative;overflow:hidden;
+}
+.hero::before{
+  content:'';position:absolute;top:0;left:50%;transform:translateX(-50%);
+  width:300px;height:1px;background:linear-gradient(90deg,transparent,var(--gold),transparent);
+}
+.badge{
+  display:inline-block;font-family:'DM Mono',monospace;font-size:10px;
+  letter-spacing:0.18em;text-transform:uppercase;color:var(--gold);
+  border:0.5px solid var(--border2);border-radius:20px;padding:4px 14px;margin-bottom:1.2rem;
+}
+.hero h1{
+  font-family:'Playfair Display',serif;font-size:clamp(28px,5vw,46px);
+  font-weight:700;line-height:1.15;margin-bottom:0.75rem;
+  background:linear-gradient(135deg,var(--text) 0%,var(--gold3) 55%,var(--gold2) 100%);
+  -webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text;
+}
+.hero p{font-size:15px;color:var(--text2);max-width:520px;margin:0 auto 1.5rem;line-height:1.7;font-weight:400}
+.einstein{
+  display:inline-flex;align-items:center;gap:10px;
+  background:var(--dark3);border:0.5px solid var(--border);
+  border-radius:var(--radius);padding:12px 18px;max-width:520px;margin:0 auto;
+  text-align:left;
+}
+.einstein-icon{font-size:20px;flex-shrink:0}
+.einstein-text{font-family:'Playfair Display',serif;font-style:italic;font-size:13px;color:var(--gold3);line-height:1.5}
+.einstein-attr{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px;font-style:normal}
+
+/* --- TABS --- */
+.tabs-wrap{padding:1.5rem 1.5rem 0;max-width:900px;margin:0 auto}
+.tabs{display:flex;gap:4px;background:var(--dark3);border:0.5px solid var(--border);border-radius:var(--radius);padding:4px}
+.tab{
+  flex:1;padding:10px 8px;border:none;background:transparent;
+  font-family:'Syne',sans-serif;font-size:13px;font-weight:500;
+  color:var(--text3);cursor:pointer;border-radius:var(--radius-sm);
+  transition:all 0.2s;white-space:nowrap;
+}
+.tab.active{background:var(--gold);color:var(--dark);font-weight:700}
+.tab:hover:not(.active){color:var(--text2);background:var(--dark5)}
+
+/* --- MAIN LAYOUT --- */
+.main{max-width:900px;margin:0 auto;padding:1.5rem}
+.layout{display:grid;grid-template-columns:1fr 1fr;gap:1.25rem}
+@media(max-width:640px){.layout{grid-template-columns:1fr}}
+
+/* --- PANELS --- */
+.panel{background:var(--dark3);border:0.5px solid var(--border);border-radius:var(--radius);padding:1.5rem}
+.panel-title{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:1.25rem;display:flex;align-items:center;gap:8px}
+.panel-title::after{content:'';flex:1;height:0.5px;background:var(--border)}
+
+/* --- FIELDS --- */
+.field{margin-bottom:1.25rem}
+.field-label{font-size:13px;font-weight:600;color:var(--text);margin-bottom:2px}
+.field-sub{font-size:11px;color:var(--text3);margin-bottom:8px;line-height:1.5}
+.input-wrap{position:relative}
+.input-prefix{
+  position:absolute;left:12px;top:50%;transform:translateY(-50%);
+  font-family:'DM Mono',monospace;font-size:14px;color:var(--gold);font-weight:500;
+}
+.input-suffix{
+  position:absolute;right:12px;top:50%;transform:translateY(-50%);
+  font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);
+}
+input[type=number]{
+  width:100%;background:var(--dark4);border:0.5px solid var(--border);
+  border-radius:var(--radius-sm);padding:11px 40px 11px 32px;
+  font-family:'DM Mono',monospace;font-size:16px;font-weight:500;
+  color:var(--text);outline:none;-moz-appearance:textfield;
+  transition:border-color 0.2s;
+}
+input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none}
+input[type=number]:focus{border-color:var(--gold2)}
+.fmt-display{
+  width:100%;background:var(--dark4);border:0.5px solid var(--border);
+  border-radius:var(--radius-sm);padding:11px 55px 11px 32px;
+  font-family:'DM Mono',monospace;font-size:16px;font-weight:500;
+  color:var(--text);outline:none;transition:border-color 0.2s;
+}
+.fmt-display:focus{border-color:var(--gold2)}
+input[type=range]{
+  width:100%;margin-top:6px;accent-color:var(--gold);cursor:pointer;
+  height:3px;
+}
+.slider-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:6px}
+.slider-val{font-family:'DM Mono',monospace;font-size:13px;color:var(--gold);font-weight:500}
+
+/* --- RATE HINTS --- */
+.rate-hints{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+.hint-btn{
+  font-family:'DM Mono',monospace;font-size:10px;padding:4px 10px;
+  border:0.5px solid var(--border2);border-radius:20px;background:transparent;
+  color:var(--text2);cursor:pointer;transition:all 0.2s;
+}
+.hint-btn:hover{background:var(--gold);color:var(--dark);border-color:var(--gold)}
+.hint-badge{font-size:9px;color:var(--text3)}
+
+/* --- RESULT --- */
+.result-panel{
+  background:var(--dark2);border:0.5px solid var(--border2);
+  border-radius:var(--radius);padding:1.5rem;position:relative;overflow:hidden;
+}
+.result-panel::before{
+  content:'';position:absolute;top:-60px;right:-60px;width:200px;height:200px;
+  border-radius:50%;background:var(--gold);opacity:0.05;pointer-events:none;
+}
+.result-mode{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.14em;text-transform:uppercase;color:var(--gold);margin-bottom:0.5rem}
+.result-label{font-size:14px;color:var(--text2);margin-bottom:0.4rem;font-weight:400}
+.result-big{
+  font-family:'Playfair Display',serif;font-size:clamp(32px,6vw,52px);
+  color:var(--gold2);line-height:1;margin-bottom:0.5rem;
+  transition:all 0.3s;
+}
+.result-big.animate{transform:scale(1.04)}
+.result-unit{font-family:'DM Mono',monospace;font-size:12px;color:var(--text3);margin-bottom:1.5rem}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.metric{background:var(--dark4);border-radius:var(--radius-sm);padding:12px}
+.metric-lbl{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3);margin-bottom:4px}
+.metric-val{font-size:15px;font-weight:600;color:var(--text)}
+.metric-val.green{color:var(--green2)}
+.metric-val.gold{color:var(--gold2)}
+
+/* --- SNOWBALL PHRASE --- */
+.snowball-phrase{
+  margin-top:1.25rem;background:var(--dark4);border-left:2px solid var(--gold);
+  border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:12px 14px;
+  font-family:'Playfair Display',serif;font-style:italic;
+  font-size:13px;color:var(--gold3);line-height:1.6;
+}
+
+/* --- CHART --- */
+.chart-panel{background:var(--dark3);border:0.5px solid var(--border);border-radius:var(--radius);padding:1.5rem}
+.chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;flex-wrap:wrap;gap:8px}
+.chart-title-txt{font-size:13px;font-weight:600;color:var(--text)}
+.chart-legend{display:flex;gap:14px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
+.leg-dot{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px;vertical-align:middle}
+.chart-wrap{position:relative;width:100%;height:260px}
+
+/* --- GOAL MODE --- */
+.goal-section{background:var(--dark4);border:0.5px solid var(--border);border-radius:var(--radius-sm);padding:1rem;margin-top:1rem}
+.goal-title{font-family:'DM Mono',monospace;font-size:10px;color:var(--gold);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:8px}
+.goal-row{display:flex;gap:8px;align-items:flex-end}
+.goal-row .input-wrap{flex:1}
+.calc-btn{
+  background:var(--gold);color:var(--dark);border:none;
+  font-family:'Syne',sans-serif;font-size:12px;font-weight:700;
+  padding:11px 16px;border-radius:var(--radius-sm);cursor:pointer;
+  transition:all 0.2s;white-space:nowrap;flex-shrink:0;
+}
+.calc-btn:hover{background:var(--gold2)}
+
+/* --- MOTIVATION --- */
+.motivation{
+  max-width:900px;margin:0 auto 2rem;padding:0 1.5rem;
+}
+.motivation-card{
+  background:var(--dark3);border:0.5px solid var(--border);
+  border-radius:var(--radius);padding:1.25rem 1.5rem;
+  display:flex;align-items:center;gap:1rem;
+}
+.mot-icon{font-size:28px;flex-shrink:0}
+.mot-text{font-family:'Playfair Display',serif;font-style:italic;font-size:14px;color:var(--text2);line-height:1.65}
+.mot-text strong{color:var(--gold3);font-style:normal}
+
+/* --- FOOTER --- */
+footer{text-align:center;padding:2rem 1.5rem;border-top:0.5px solid var(--border);
+  font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)}
+footer span{color:var(--gold)}
+
+/* --- PANEL SECTIONS for scroll --- */
+.section{display:none}
+.section.visible{display:block}
+
+/* --- CURRENCY TOGGLE --- */
+.currency-bar{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.25rem;padding-bottom:1rem;border-bottom:0.5px solid var(--border)}
+.currency-label{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:var(--text3)}
+.currency-toggle{display:flex;background:var(--dark4);border:0.5px solid var(--border);border-radius:20px;padding:3px;gap:3px}
+.cur-btn{font-family:'DM Mono',monospace;font-size:11px;font-weight:500;padding:5px 14px;border:none;background:transparent;color:var(--text3);cursor:pointer;border-radius:17px;transition:all 0.2s}
+.cur-btn.active{background:var(--gold);color:var(--dark);font-weight:700}
+.cur-btn:hover:not(.active){color:var(--text2);background:var(--dark5)}
+
+/* Tooltip style */
+.field-tip-box{
+  background:var(--dark5);border:0.5px solid var(--border);border-radius:var(--radius-sm);
+  padding:8px 12px;margin-top:6px;
+  font-size:11.5px;color:var(--text3);line-height:1.6;
+  display:flex;gap:6px;align-items:flex-start;
+}
+.tip-icon{
+  flex-shrink:0;width:15px;height:15px;border-radius:50%;
+  background:rgba(123,158,197,0.15);color:var(--gold);
+  font-family:'DM Mono',monospace;font-size:9px;font-weight:500;
+  display:flex;align-items:center;justify-content:center;margin-top:1px;
+}
+</style>
+</head>
+<body>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="badge">Partners Finance · Herramienta de Entrenamiento</div>
+  <h1>Sé el dueño<br>de tu destino</h1>
+  <p>Deja de cambiar tiempo por dinero. Descubre cuánto puede crecer tu capital con el poder silencioso del interés compuesto.</p>
+  <div class="einstein">
+    <div class="einstein-icon">⚡</div>
+    <div>
+      <div class="einstein-text">"El interés compuesto es la octava maravilla del mundo. Quien lo entiende, lo gana. Quien no lo entiende, lo paga."</div>
+      <div class="einstein-attr">— Albert Einstein</div>
+    </div>
+  </div>
+</div>
+
+<!-- TABS -->
+<div class="tabs-wrap">
+  <div class="tabs">
+    <button class="tab active" onclick="switchTab('meta')">🎯 ¿Cuánto tendré?</button>
+    <button class="tab" onclick="switchTab('esfuerzo')">⚡ ¿Qué esfuerzo necesito?</button>
+    <button class="tab" onclick="switchTab('tiempo')">⏳ ¿En cuánto tiempo?</button>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+
+  <!-- TAB: META FINAL -->
+  <div id="tab-meta" class="section visible">
+    <div class="layout">
+      <!-- INPUTS -->
+      <div>
+        <div class="panel">
+          <div class="panel-title">Tus variables</div>
+
+          <div class="currency-bar">
+            <span class="currency-label">Moneda</span>
+            <div class="currency-toggle">
+              <button class="cur-btn active" onclick="setCurrency('COP')">COP</button>
+              <button class="cur-btn" onclick="setCurrency('USD')">USD</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">¿Cuánto dinero tienes hoy?</div>
+            <div class="field-sub">Tu capital de partida · Valor Presente (VP)</div>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="text" id="m-pv" class="fmt-display" value="10,000,000" placeholder="0" oninput="onFmtInput(this,'m-pv','calcMeta')">
+              <span class="input-suffix cur-label">COP</span>
+            </div>
+            <div class="field-tip-box"><span class="tip-icon">i</span>No importa si es poco — lo que importa es empezar. El tiempo hará el trabajo pesado por ti. Cada peso que pones hoy vale mucho más que uno puesto mañana.</div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">¿Cuánto pones cada mes?</div>
+            <div class="field-sub">Tu aporte mensual recurrente</div>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="text" id="m-pmt" class="fmt-display" value="500,000" placeholder="0" oninput="onFmtInput(this,'m-pmt','calcMeta')">
+              <span class="input-suffix">/ mes</span>
+            </div>
+            <div class="field-tip-box"><span class="tip-icon">i</span>Este es tu "sueldo a ti mismo". Automatiza este aporte y trátalo como un gasto fijo — no negociable. La constancia supera al talento.</div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">Tiempo · ¿En cuántos años?</div>
+            <div class="field-sub">Horizonte de inversión</div>
+            <div class="slider-row">
+              <span style="font-size:12px;color:var(--text3)">1 año</span>
+              <span class="slider-val" id="m-years-lbl">20 años</span>
+              <span style="font-size:12px;color:var(--text3)">40 años</span>
+            </div>
+            <input type="range" id="m-years" min="1" max="40" value="20" step="1" oninput="updYears('m');calcMeta()">
+            <div class="field-tip-box"><span class="tip-icon">i</span>El tiempo es tu activo más poderoso. A mayor horizonte, menor el riesgo relativo y mayor el impacto del compuesto. Invierte con mentalidad de árbol, no de flor.</div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">Esfuerzo · Tasa de rentabilidad anual</div>
+            <div class="field-sub">¿Qué tan duro trabaja tu dinero? (% anual)</div>
+            <div class="slider-row">
+              <span style="font-size:12px;color:var(--text3)">1%</span>
+              <span class="slider-val" id="m-rate-lbl">10%</span>
+              <span style="font-size:12px;color:var(--text3)">25%</span>
+            </div>
+            <input type="range" id="m-rate" min="1" max="25" value="10" step="0.5" oninput="updRate('m');calcMeta()">
+            <div class="rate-hints">
+              <button class="hint-btn" onclick="setRate('m',5)">5% <span class="hint-badge">CDT/Conservador</span></button>
+              <button class="hint-btn" onclick="setRate('m',7)">7% <span class="hint-badge">Moderado</span></button>
+              <button class="hint-btn" onclick="setRate('m',10)">10% <span class="hint-badge">S&P 500 histórico</span></button>
+              <button class="hint-btn" onclick="setRate('m',13)">13% <span class="hint-badge">Agresivo</span></button>
+            </div>
+            <div class="field-tip-box" style="margin-top:8px"><span class="tip-icon">i</span>El S&P 500 ha retornado ~10% anual histórico. Para Colombia: CDTs 7-9%, bolsa local 8-14%. Sé honesto con el riesgo que puedes asumir.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- RESULTADO -->
+      <div>
+        <div class="result-panel">
+          <div class="result-mode">Tu meta financiera</div>
+          <div class="result-label">Al final de tu horizonte tendrás</div>
+          <div class="result-big" id="m-fv-display">$0</div>
+          <div class="result-unit" id="m-fv-unit">en 0 años · tasa 0%</div>
+          <div class="metrics">
+            <div class="metric">
+              <div class="metric-lbl">Capital invertido</div>
+              <div class="metric-val" id="m-invested">$0</div>
+            </div>
+            <div class="metric">
+              <div class="metric-lbl">Intereses ganados</div>
+              <div class="metric-val green" id="m-gains">$0</div>
+            </div>
+            <div class="metric">
+              <div class="metric-lbl">Multiplicador</div>
+              <div class="metric-val gold" id="m-mult">×0</div>
+            </div>
+            <div class="metric">
+              <div class="metric-lbl">Renta mensual estimada</div>
+              <div class="metric-val" id="m-renta">$0</div>
+            </div>
+          </div>
+          <div class="snowball-phrase" id="m-phrase">Ingresa tus datos para ver crecer tu bola de nieve ❄️</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- CHART -->
+    <div class="chart-panel" style="margin-top:1.25rem">
+      <div class="chart-header">
+        <div class="chart-title-txt">La bola de nieve · Crecimiento año a año</div>
+        <div class="chart-legend">
+          <span><span class="leg-dot" style="background:#7B9EC5"></span>Valor total</span>
+          <span><span class="leg-dot" style="background:#4A9A82"></span>Capital aportado</span>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="metaChart" role="img" aria-label="Gráfico de barras del crecimiento del capital año a año mostrando valor total versus capital invertido.">Gráfico de crecimiento del capital.</canvas>
+      </div>
+    </div>
+  </div><!-- end tab-meta -->
+
+  <!-- TAB: ESFUERZO -->
+  <div id="tab-esfuerzo" class="section">
+    <div class="layout">
+      <div>
+        <div class="panel">
+          <div class="panel-title">Define tu escenario</div>
+
+          <div class="currency-bar">
+            <span class="currency-label">Moneda</span>
+            <div class="currency-toggle">
+              <button class="cur-btn active" onclick="setCurrency('COP')">COP</button>
+              <button class="cur-btn" onclick="setCurrency('USD')">USD</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">Capital inicial disponible</div>
+            <div class="field-sub">Lo que tienes hoy (VP)</div>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="text" id="e-pv" class="fmt-display" value="10,000,000" placeholder="0" oninput="onFmtInput(this,'e-pv','calcEsfuerzo')">
+              <span class="input-suffix cur-label">COP</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">Aporte mensual</div>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="text" id="e-pmt" class="fmt-display" value="500,000" placeholder="0" oninput="onFmtInput(this,'e-pmt','calcEsfuerzo')">
+              <span class="input-suffix">/ mes</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">Años de inversión</div>
+            <div class="slider-row">
+              <span style="font-size:12px;color:var(--text3)">1</span>
+              <span class="slider-val" id="e-years-lbl">20 años</span>
+              <span style="font-size:12px;color:var(--text3)">40</span>
+            </div>
+            <input type="range" id="e-years" min="1" max="40" value="20" step="1" oninput="updYears('e');calcEsfuerzo()">
+          </div>
+
+          <div class="field">
+            <div class="field-label">🎯 Tu meta de dinero</div>
+            <div class="field-sub">¿Cuánto quieres tener al final?</div>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="text" id="e-goal" class="fmt-display" value="1,000,000,000" placeholder="0" oninput="onFmtInput(this,'e-goal','calcEsfuerzo')">
+              <span class="input-suffix cur-label">COP</span>
+            </div>
+            <div class="field-tip-box"><span class="tip-icon">i</span>Define primero tu número. ¿Cuánto necesitas para vivir de tus inversiones? Un punto de partida: multiplica tu gasto mensual deseado por 200-300.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="result-panel">
+          <div class="result-mode">Tasa requerida</div>
+          <div class="result-label">Para alcanzar tu meta necesitas</div>
+          <div class="result-big" id="e-rate-display">0%</div>
+          <div class="result-unit" id="e-rate-unit">anual de rentabilidad</div>
+          <div class="metrics">
+            <div class="metric">
+              <div class="metric-lbl">Meta objetivo</div>
+              <div class="metric-val gold" id="e-goal-display">$0</div>
+            </div>
+            <div class="metric">
+              <div class="metric-lbl">Capital que aportarás</div>
+              <div class="metric-val" id="e-invested">$0</div>
+            </div>
+            <div class="metric">
+              <div class="metric-lbl">Equivalente en mercado</div>
+              <div class="metric-val" id="e-market">—</div>
+            </div>
+            <div class="metric">
+              <div class="metric-lbl">Renta mensual estimada</div>
+              <div class="metric-val" id="e-renta">$0</div>
+            </div>
+          </div>
+          <div class="snowball-phrase" id="e-phrase">Completa los campos para calcular tu esfuerzo requerido.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-panel" style="margin-top:1.25rem">
+      <div class="chart-header">
+        <div class="chart-title-txt">Comparativo de tasas · ¿Cómo afecta el esfuerzo?</div>
+        <div class="chart-legend">
+          <span><span class="leg-dot" style="background:#7B9EC5"></span>Tu tasa requerida</span>
+          <span><span class="leg-dot" style="background:#3A7A3A"></span>S&P 500 (10%)</span>
+          <span><span class="leg-dot" style="background:#3A5A8A"></span>CDT (7%)</span>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="esfuerzoChart" role="img" aria-label="Comparativo de valor futuro según diferentes tasas de rentabilidad.">Gráfico comparativo de tasas.</canvas>
+      </div>
+    </div>
+  </div><!-- end tab-esfuerzo -->
+
+  <!-- TAB: TIEMPO -->
+  <div id="tab-tiempo" class="section">
+    <div class="layout">
+      <div>
+        <div class="panel">
+          <div class="panel-title">Define tu escenario</div>
+
+          <div class="currency-bar">
+            <span class="currency-label">Moneda</span>
+            <div class="currency-toggle">
+              <button class="cur-btn active" onclick="setCurrency('COP')">COP</button>
+              <button class="cur-btn" onclick="setCurrency('USD')">USD</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">Capital inicial disponible</div>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="text" id="t-pv" class="fmt-display" value="10,000,000" placeholder="0" oninput="onFmtInput(this,'t-pv','calcTiempo')">
+              <span class="input-suffix cur-label">COP</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">Aporte mensual</div>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="text" id="t-pmt" class="fmt-display" value="500,000" placeholder="0" oninput="onFmtInput(this,'t-pmt','calcTiempo')">
+              <span class="input-suffix">/ mes</span>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">Tasa de rentabilidad anual</div>
+            <div class="slider-row">
+              <span style="font-size:12px;color:var(--text3)">1%</span>
+              <span class="slider-val" id="t-rate-lbl">10%</span>
+              <span style="font-size:12px;color:var(--text3)">25%</span>
+            </div>
+            <input type="range" id="t-rate" min="1" max="25" value="10" step="0.5" oninput="updRate('t');calcTiempo()">
+            <div class="rate-hints" style="margin-top:8px">
+              <button class="hint-btn" onclick="setRateT(5)">5%</button>
+              <button class="hint-btn" onclick="setRateT(7)">7%</button>
+              <button class="hint-btn" onclick="setRateT(10)">10%</button>
+              <button class="hint-btn" onclick="setRateT(13)">13%</button>
+            </div>
+          </div>
+
+          <div class="field">
+            <div class="field-label">🎯 Tu meta de dinero</div>
+            <div class="field-sub">¿Cuánto quieres acumular?</div>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="text" id="t-goal" class="fmt-display" value="1,000,000,000" placeholder="0" oninput="onFmtInput(this,'t-goal','calcTiempo')">
+              <span class="input-suffix cur-label">COP</span>
+            </div>
+            <div class="field-tip-box"><span class="tip-icon">i</span>Con esta herramienta puedes descubrir cuándo serás libre. El número que ves te dice cuánto tiempo de disciplina necesitas para pasar de empleado a dueño de tu tiempo.</div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="result-panel">
+          <div class="result-mode">Tiempo requerido</div>
+          <div class="result-label">Alcanzarás tu meta en aproximadamente</div>
+          <div class="result-big" id="t-years-display">0</div>
+          <div class="result-unit" id="t-years-unit">años de disciplina</div>
+          <div class="metrics">
+            <div class="metric">
+              <div class="metric-lbl">Meta objetivo</div>
+              <div class="metric-val gold" id="t-goal-display">$0</div>
+            </div>
+            <div class="metric">
+              <div class="metric-lbl">Capital total aportado</div>
+              <div class="metric-val" id="t-invested">$0</div>
+            </div>
+            <div class="metric">
+              <div class="metric-lbl">Intereses generados</div>
+              <div class="metric-val green" id="t-gains">$0</div>
+            </div>
+            <div class="metric">
+              <div class="metric-lbl">Renta mensual estimada</div>
+              <div class="metric-val" id="t-renta">$0</div>
+            </div>
+          </div>
+          <div class="snowball-phrase" id="t-phrase">Completa los campos para saber cuándo serás libre.</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-panel" style="margin-top:1.25rem">
+      <div class="chart-header">
+        <div class="chart-title-txt">Camino hacia la libertad · Crecimiento acumulado</div>
+        <div class="chart-legend">
+          <span><span class="leg-dot" style="background:#7B9EC5"></span>Valor acumulado</span>
+          <span><span class="leg-dot" style="background:#4A9A82"></span>Capital aportado</span>
+          <span><span class="leg-dot" style="background:#8A2828"></span>Tu meta</span>
+        </div>
+      </div>
+      <div class="chart-wrap">
+        <canvas id="tiempoChart" role="img" aria-label="Línea de crecimiento del capital versus la meta deseada.">Gráfico de tiempo hasta alcanzar la meta.</canvas>
+      </div>
+    </div>
+  </div><!-- end tab-tiempo -->
+
+</div><!-- end main -->
+
+<!-- MOTIVATION -->
+<div class="motivation">
+  <div class="motivation-card">
+    <div class="mot-icon">🏔️</div>
+    <div class="mot-text">
+      El objetivo no es hacerte rico de la noche a la mañana. Es <strong>construir tu bola de nieve</strong>: empieza pequeña, dale consistencia, y el tiempo hace el resto. Pasa de cambiar horas por pesos, a tener un sistema que trabaja mientras tú duermes.
+    </div>
+  </div>
+</div>
+
+<footer>
+  <p>Partners Finance · Herramienta educativa · <span>No es asesoría financiera individual</span></p>
+  <p style="margin-top:4px">Los rendimientos históricos no garantizan resultados futuros</p>
+</footer>
+
+<script>
+// ---- UTILS ----
+function fmt(n,short=true){
+  if(isNaN(n)||!isFinite(n)) return '—';
+  const sym=currentCurrency==='USD'?'USD $':'$';
+  const abs=Math.abs(n);
+  if(abs>=1e12) return sym+(n/1e12).toFixed(2)+'T';
+  if(abs>=1e9)  return sym+(n/1e9).toFixed(2)+'B';
+  if(abs>=1e6)  return sym+(n/1e6).toFixed(2)+'M';
+  if(abs>=1e3)  return sym+(n/1e3).toFixed(1)+'K';
+  return sym+Math.round(n).toLocaleString('es-CO');
+}
+function fmtPct(r){return isNaN(r)||!isFinite(r)?'—':r.toFixed(2)+'%'}
+function fmtYrs(y){
+  if(!isFinite(y)||y<=0) return '—';
+  const f=Math.floor(y);
+  const m=Math.round((y-f)*12);
+  return m>0?f+' años '+m+' meses':f+' años';
+}
+function animate(id){
+  const el=document.getElementById(id);
+  if(!el)return;
+  el.classList.add('animate');
+  setTimeout(()=>el.classList.remove('animate'),350);
+}
+
+// Compound interest FV:  PV*(1+i)^n + PMTanual*((1+i)^n-1)/i
+function calcFV(pv, pmtAnual, i, n){
+  if(i===0) return pv + pmtAnual*n;
+  const factor=Math.pow(1+i,n);
+  return pv*factor + pmtAnual*(factor-1)/i;
+}
+
+// Newton-Raphson for rate
+function solveRate(pv, pmtAnual, n, fvTarget, tol=1e-8, maxIter=200){
+  let r=0.08;
+  for(let k=0;k<maxIter;k++){
+    const f=calcFV(pv,pmtAnual,r,n)-fvTarget;
+    // derivative w.r.t r
+    const dr=1e-7;
+    const fp=(calcFV(pv,pmtAnual,r+dr,n)-fvTarget)/dr;
+    const rn=r-f/fp;
+    if(Math.abs(rn-r)<tol) return rn;
+    r=Math.max(0.0001,Math.min(rn,5));
+  }
+  return r;
+}
+
+// Binary search for years
+function solveYears(pv, pmtAnual, i, fvTarget, maxY=80){
+  if(calcFV(pv,pmtAnual,i,maxY)<fvTarget) return Infinity;
+  let lo=0,hi=maxY;
+  for(let k=0;k<100;k++){
+    const mid=(lo+hi)/2;
+    if(calcFV(pv,pmtAnual,i,mid)>=fvTarget) hi=mid; else lo=mid;
+    if(hi-lo<0.01) return hi;
+  }
+  return hi;
+}
+
+function motivPhrase(mult){
+  if(mult<2) return 'Tu capital apenas empieza a moverse. Aumenta el tiempo o el aporte — la bola de nieve necesita más pendiente. 💪';
+  if(mult<5) return 'Vas bien. Con este ritmo ya estás superando la inflación y construyendo patrimonio real. ¡No pares! ❄️';
+  if(mult<10) return 'Excelente disciplina. Estás en el camino para pasar de un salario a hacer lo que te apasiona. 🔥';
+  if(mult<20) return '¡La bola de nieve ya rueda sola! Tus intereses generarán más que tu trabajo. Esto es libertad financiera. 🏆';
+  return '¡Eres el rey/reina de tu destino! Has domado el tiempo y el compuesto trabaja para ti las 24 horas. 👑';
+}
+
+// ---- TAB LOGIC ----
+let activeTab='meta';
+function switchTab(tab){
+  ['meta','esfuerzo','tiempo'].forEach(t=>{
+    document.getElementById('tab-'+t).classList.remove('visible');
+  });
+  document.querySelectorAll('.tab').forEach((b,i)=>{
+    b.classList.remove('active');
+    if(['meta','esfuerzo','tiempo'][i]===tab) b.classList.add('active');
+  });
+  document.getElementById('tab-'+tab).classList.add('visible');
+  activeTab=tab;
+  if(tab==='meta') calcMeta();
+  if(tab==='esfuerzo') calcEsfuerzo();
+  if(tab==='tiempo') calcTiempo();
+}
+
+// ---- SLIDER HELPERS ----
+function updYears(pfx){
+  const v=document.getElementById(pfx+'-years').value;
+  document.getElementById(pfx+'-years-lbl').textContent=v+' años';
+}
+function updRate(pfx){
+  const v=document.getElementById(pfx+'-rate').value;
+  document.getElementById(pfx+'-rate-lbl').textContent=v+'%';
+}
+function setRate(pfx,v){
+  document.getElementById(pfx+'-rate').value=v;
+  updRate(pfx);calcMeta();
+}
+function setRateT(v){
+  document.getElementById('t-rate').value=v;
+  updRate('t');calcTiempo();
+}
+
+// ---- CHART INSTANCES ----
+let chartMeta=null, chartEsf=null, chartTiempo=null;
+
+// ---- CALC META ----
+function calcMeta(){
+  const pv=getRawVal('m-pv');
+  const pmt=getRawVal('m-pmt');
+  const t=parseInt(document.getElementById('m-years').value)||20;
+  const r=parseFloat(document.getElementById('m-rate').value)||10;
+
+  const i=r/100;
+  const pmtAnual=pmt*12;
+  const fv=calcFV(pv,pmtAnual,i,t);
+  const invested=pv+pmtAnual*t;
+  const gains=fv-invested;
+  const mult=invested>0?fv/invested:0;
+  const renta=fv*(i/12);
+
+  document.getElementById('m-fv-display').textContent=fmt(fv);
+  document.getElementById('m-fv-unit').textContent='en '+t+' años · tasa '+r+'% anual';
+  document.getElementById('m-invested').textContent=fmt(invested);
+  document.getElementById('m-gains').textContent='+'+fmt(gains);
+  document.getElementById('m-mult').textContent='×'+mult.toFixed(1);
+  document.getElementById('m-renta').textContent=fmt(renta)+'/mes';
+  document.getElementById('m-phrase').textContent=motivPhrase(mult);
+  animate('m-fv-display');
+
+  // Chart
+  const labels=[],fvData=[],invData=[];
+  for(let y=1;y<=t;y++){
+    const fvy=calcFV(pv,pmtAnual,i,y);
+    const invy=pv+pmtAnual*y;
+    labels.push('Año '+y);
+    fvData.push(Math.round(fvy));
+    invData.push(Math.round(invy));
+  }
+  buildBarChart('metaChart',labels,fvData,invData,null,chartMeta,c=>chartMeta=c);
+}
+
+// ---- CALC ESFUERZO ----
+function calcEsfuerzo(){
+  const pv=getRawVal('e-pv');
+  const pmt=getRawVal('e-pmt');
+  const t=parseInt(document.getElementById('e-years').value)||20;
+  const goal=getRawVal('e-goal');
+
+  if(goal<=0){return;}
+  const pmtAnual=pmt*12;
+  const invested=pv+pmtAnual*t;
+
+  let rSolved=solveRate(pv,pmtAnual,t,goal);
+  if(rSolved<0||!isFinite(rSolved)){rSolved=NaN;}
+  const rPct=rSolved*100;
+
+  let marketLabel='—';
+  if(isFinite(rSolved)){
+    if(rPct<5) marketLabel='Conservador / CDT';
+    else if(rPct<8) marketLabel='Bonos / Deuda mixta';
+    else if(rPct<12) marketLabel='S&P 500 histórico';
+    else if(rPct<18) marketLabel='Portafolio agresivo';
+    else marketLabel='Muy agresivo / Cripto';
+  }
+
+  const renta=isFinite(rSolved)?goal*(rSolved/12):NaN;
+
+  document.getElementById('e-rate-display').textContent=isFinite(rSolved)?rPct.toFixed(2)+'%':'Imposible';
+  document.getElementById('e-rate-unit').textContent='anual de rentabilidad en '+t+' años';
+  document.getElementById('e-goal-display').textContent=fmt(goal);
+  document.getElementById('e-invested').textContent=fmt(invested);
+  document.getElementById('e-market').textContent=marketLabel;
+  document.getElementById('e-renta').textContent=fmt(renta)+'/mes';
+
+  const phrase=isFinite(rSolved)
+    ? (rPct<8?'Tu meta es alcanzable con inversiones conservadoras. ¡Muy bien planeado!'
+      :rPct<12?'Una tasa de mercado realista. El S&P 500 históricamente ha logrado esto.'
+      :rPct<18?'Requiere una estrategia agresiva. Exige educación y gestión activa del riesgo.'
+      :'Esta tasa requiere retornos excepcionales. Revisa tu meta o amplía el horizonte de tiempo.')
+    : 'Tu meta no es alcanzable con esos parámetros. Aumenta el aporte inicial, el mensual o los años.';
+  document.getElementById('e-phrase').textContent=phrase;
+  animate('e-rate-display');
+
+  // Chart: compare scenarios at different rates
+  const rates=[5,7,rPct,10,13].filter((v,i,a)=>a.indexOf(v)===i&&v>0&&isFinite(v)).sort((a,b)=>a-b);
+  const labsC=[],datasetsC=[];
+  for(let y=1;y<=t;y++) labsC.push('Año '+y);
+  const colors=['#5580B0','#3A7A6A','#7B9EC5','#B07840','#7A5AB0'];
+  rates.slice(0,3).forEach((ri,idx)=>{
+    const d=[];
+    for(let y=1;y<=t;y++) d.push(Math.round(calcFV(pv,pmtAnual,ri/100,y)));
+    datasetsC.push({
+      label:ri.toFixed(1)+'%',data:d,
+      backgroundColor:colors[idx]+'88',borderColor:colors[idx],borderWidth:1,borderRadius:2,
+    });
+  });
+  buildMultiBarChart('esfuerzoChart',labsC,datasetsC,chartEsf,c=>chartEsf=c);
+}
+
+// ---- CALC TIEMPO ----
+function calcTiempo(){
+  const pv=getRawVal('t-pv');
+  const pmt=getRawVal('t-pmt');
+  const r=parseFloat(document.getElementById('t-rate').value)||10;
+  const goal=getRawVal('t-goal');
+
+  if(goal<=0||r<=0) return;
+  const i=r/100;
+  const pmtAnual=pmt*12;
+  const ySolved=solveYears(pv,pmtAnual,i,goal);
+  const tInt=Math.ceil(ySolved);
+  const invested=pv+pmtAnual*ySolved;
+  const gains=goal-invested;
+  const renta=goal*(i/12);
+
+  document.getElementById('t-years-display').textContent=isFinite(ySolved)?fmtYrs(ySolved):'Nunca';
+  document.getElementById('t-years-unit').textContent=isFinite(ySolved)?'de disciplina constante':'Revisa tu meta o aumenta aportes';
+  document.getElementById('t-goal-display').textContent=fmt(goal);
+  document.getElementById('t-invested').textContent=fmt(invested);
+  document.getElementById('t-gains').textContent=isFinite(gains)?'+'+fmt(gains):'—';
+  document.getElementById('t-renta').textContent=fmt(renta)+'/mes';
+
+  const phrase=!isFinite(ySolved)
+    ? 'Con los parámetros actuales no alcanzarás esa meta. Aumenta tu aporte mensual o la tasa objetivo.'
+    : ySolved<5 ? '¡Meta muy cercana! En poco tiempo habrás transformado tu capital. Eres imparable. 🚀'
+    : ySolved<15 ? 'Un horizonte claro y alcanzable. Mantén la disciplina y llegarás. El compuesto ya trabaja. 💪'
+    : ySolved<25 ? 'Un camino largo, pero cada año que pasa la bola rueda más rápido. Planta el árbol hoy. 🌳'
+    : 'Esta meta requiere mucha paciencia. Considera aumentar aportes o revisar si la meta es la correcta para ti.';
+  document.getElementById('t-phrase').textContent=phrase;
+  animate('t-years-display');
+
+  // Chart
+  const maxY=Math.min(isFinite(tInt)?Math.ceil(tInt*1.2):40,80);
+  const labsT=[],fvD=[],invD=[],goalD=[];
+  for(let y=1;y<=maxY;y++){
+    labsT.push('Año '+y);
+    fvD.push(Math.round(calcFV(pv,pmtAnual,i,y)));
+    invD.push(Math.round(pv+pmtAnual*y));
+    goalD.push(Math.round(goal));
+  }
+  buildAreaChart('tiempoChart',labsT,fvD,invD,goalD,chartTiempo,c=>chartTiempo=c);
+}
+
+// ---- CHART BUILDERS ----
+const isDark=true; // always dark app
+const gridColor='rgba(240,237,228,0.06)';
+const tickColor='rgba(240,237,228,0.35)';
+
+function chartOpts(fmt_fn){
+  return{
+    responsive:true,maintainAspectRatio:false,
+    plugins:{legend:{display:false},tooltip:{callbacks:{label:ctx=>' '+fmt(ctx.raw)},backgroundColor:'#141822',titleColor:'#A3BDD8',bodyColor:'#9AAEC4',borderColor:'rgba(123,158,197,0.3)',borderWidth:0.5}},
+    scales:{
+      x:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},maxRotation:45,
+        callback:function(val,idx){
+          const total=this.chart.data.labels.length;
+          if(total<=10) return this.getLabelForValue(val);
+          if(total<=20) return idx%2===0?this.getLabelForValue(val):'';
+          if(total<=40) return idx%5===0?this.getLabelForValue(val):'';
+          return idx%10===0?this.getLabelForValue(val):'';
+        }
+      }},
+      y:{grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},callback:v=>fmt(v)}}
+    }
+  };
+}
+
+function buildBarChart(id,labels,fvD,invD,goalD,existing,setter){
+  if(existing) existing.destroy();
+  const datasets=[
+    {label:'Valor total',data:fvD,backgroundColor:'rgba(123,158,197,0.80)',borderRadius:3,borderSkipped:false},
+    {label:'Capital aportado',data:invD,backgroundColor:'rgba(42,122,82,0.65)',borderRadius:3,borderSkipped:false}
+  ];
+  if(goalD) datasets.push({label:'Meta',data:goalD,type:'line',borderColor:'#8A2828',borderWidth:1.5,borderDash:[5,4],pointRadius:0,fill:false});
+  const c=new Chart(document.getElementById(id),{type:'bar',data:{labels,datasets},options:chartOpts()});
+  setter(c);
+}
+
+function buildMultiBarChart(id,labels,datasets,existing,setter){
+  if(existing) existing.destroy();
+  const c=new Chart(document.getElementById(id),{type:'bar',data:{labels,datasets},options:{...chartOpts(),plugins:{...chartOpts().plugins,legend:{display:true,labels:{color:tickColor,font:{size:10},boxWidth:10}}}}});
+  setter(c);
+}
+
+function buildAreaChart(id,labels,fvD,invD,goalD,existing,setter){
+  if(existing) existing.destroy();
+  const c=new Chart(document.getElementById(id),{
+    type:'line',
+    data:{labels,datasets:[
+      {label:'Capital aportado',data:invD,borderColor:'#2A7A52',backgroundColor:'rgba(42,122,82,0.15)',fill:true,tension:0.3,pointRadius:0,borderWidth:1.5},
+      {label:'Valor acumulado',data:fvD,borderColor:'#7B9EC5',backgroundColor:'rgba(123,158,197,0.22)',fill:true,tension:0.3,pointRadius:0,borderWidth:2},
+      {label:'Tu meta',data:goalD,borderColor:'#8A2828',backgroundColor:'transparent',fill:false,tension:0,pointRadius:0,borderWidth:1.5,borderDash:[6,4]}
+    ]},
+    options:{...chartOpts(),plugins:{...chartOpts().plugins,legend:{display:false}}}
+  });
+  setter(c);
+}
+
+// ---- CURRENCY ----
+let currentCurrency='COP';
+const defaults={COP:{pv:10000000,pmt:500000,goal:1000000000},USD:{pv:3000,pmt:150,goal:300000}};
+
+function setCurrency(cur){
+  if(currentCurrency===cur) return;
+  currentCurrency=cur;
+  document.querySelectorAll('.cur-btn').forEach(b=>b.classList.remove('active'));
+  document.querySelectorAll('.cur-btn').forEach(b=>{if(b.textContent.trim()===cur)b.classList.add('active')});
+  document.querySelectorAll('.cur-label').forEach(el=>el.textContent=cur==='COP'?'COP':'USD');
+  // Update defaults
+  const d=defaults[cur];
+  setFmtVal('m-pv',d.pv);setFmtVal('m-pmt',d.pmt);
+  setFmtVal('e-pv',d.pv);setFmtVal('e-pmt',d.pmt);setFmtVal('e-goal',d.goal);
+  setFmtVal('t-pv',d.pv);setFmtVal('t-pmt',d.pmt);setFmtVal('t-goal',d.goal);
+  calcMeta();
+  if(activeTab==='esfuerzo') calcEsfuerzo();
+  if(activeTab==='tiempo') calcTiempo();
+}
+
+function fmtThousands(n){
+  if(isNaN(n)) return '';
+  return n.toLocaleString('es-CO',{maximumFractionDigits:0});
+}
+
+function getRawVal(id){
+  const el=document.getElementById(id);
+  if(!el) return 0;
+  const raw=el.value.replace(/[.,\s]/g,'').replace(/[^0-9]/g,'');
+  return parseFloat(raw)||0;
+}
+
+function setFmtVal(id,num){
+  const el=document.getElementById(id);
+  if(!el) return;
+  el.value=fmtThousands(num);
+}
+
+function onFmtInput(el,id,calcFn){
+  const raw=el.value.replace(/[.,\s]/g,'').replace(/[^0-9]/g,'');
+  const num=parseFloat(raw)||0;
+  const pos=el.selectionStart;
+  const oldLen=el.value.length;
+  el.value=fmtThousands(num)||'';
+  // Restore cursor approx position
+  const diff=el.value.length-oldLen;
+  try{el.setSelectionRange(pos+diff,pos+diff);}catch(e){}
+  window[calcFn]();
+}
+
+// ---- INIT ----
+updYears('m');updRate('m');
+updYears('e');
+updRate('t');
+calcMeta();
+</script>
+</body>
+</html>
