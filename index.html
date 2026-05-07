@@ -7,6 +7,8 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,700;1,400&family=Syne:wght@400;500;600;700&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
 <style>
 *{box-sizing:border-box;margin:0;padding:0}
 :root{
@@ -160,6 +162,27 @@ input[type=range]{
   border-radius:0 var(--radius-sm) var(--radius-sm) 0;padding:12px 14px;
   font-family:'Playfair Display',serif;font-style:italic;
   font-size:13px;color:var(--gold3);line-height:1.6;
+}
+
+/* --- PDF BUTTON --- */
+.pdf-btn{
+  display:flex;align-items:center;justify-content:center;gap:8px;
+  width:100%;margin-top:1rem;padding:13px 20px;
+  background:transparent;border:0.5px solid var(--border2);border-radius:var(--radius-sm);
+  font-family:'Syne',sans-serif;font-size:13px;font-weight:600;
+  color:var(--gold2);cursor:pointer;transition:all 0.25s;
+  letter-spacing:0.02em;
+}
+.pdf-btn:hover{background:var(--gold);color:var(--dark);border-color:var(--gold)}
+.pdf-btn svg{flex-shrink:0;transition:transform 0.2s}
+.pdf-btn:hover svg{transform:translateY(1px)}
+.pdf-btn.loading{opacity:0.6;pointer-events:none}
+
+/* --- PDF REPORT TEMPLATE (hidden) --- */
+#pdf-template{
+  display:none;position:fixed;top:-9999px;left:-9999px;
+  width:794px;background:#0E1117;color:#EDF1F8;
+  font-family:'Syne',sans-serif;padding:48px 52px;
 }
 
 /* --- CHART --- */
@@ -352,6 +375,10 @@ footer span{color:var(--gold)}
             </div>
           </div>
           <div class="snowball-phrase" id="m-phrase">Ingresa tus datos para ver crecer tu bola de nieve ❄️</div>
+          <button class="pdf-btn" id="pdf-btn" onclick="downloadPDF()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar mi meta en PDF
+          </button>
         </div>
       </div>
     </div>
@@ -453,6 +480,10 @@ footer span{color:var(--gold)}
             </div>
           </div>
           <div class="snowball-phrase" id="e-phrase">Completa los campos para calcular tu esfuerzo requerido.</div>
+          <button class="pdf-btn" id="pdf-btn-e" onclick="downloadPDFesfuerzo()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar mi análisis en PDF
+          </button>
         </div>
       </div>
     </div>
@@ -559,6 +590,10 @@ footer span{color:var(--gold)}
             </div>
           </div>
           <div class="snowball-phrase" id="t-phrase">Completa los campos para saber cuándo serás libre.</div>
+          <button class="pdf-btn" id="pdf-btn-t" onclick="downloadPDFtiempo()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar mi análisis en PDF
+          </button>
         </div>
       </div>
     </div>
@@ -628,19 +663,22 @@ function calcFV(pv, pmtAnual, i, n){
   return pv*factor + pmtAnual*(factor-1)/i;
 }
 
-// Newton-Raphson for rate
-function solveRate(pv, pmtAnual, n, fvTarget, tol=1e-8, maxIter=200){
-  let r=0.08;
-  for(let k=0;k<maxIter;k++){
-    const f=calcFV(pv,pmtAnual,r,n)-fvTarget;
-    // derivative w.r.t r
-    const dr=1e-7;
-    const fp=(calcFV(pv,pmtAnual,r+dr,n)-fvTarget)/dr;
-    const rn=r-f/fp;
-    if(Math.abs(rn-r)<tol) return rn;
-    r=Math.max(0.0001,Math.min(rn,5));
+// Bisection for rate — robust, always converges
+function solveRate(pv, pmtAnual, n, fvTarget){
+  // Edge: if goal is already met with 0 growth, rate = 0
+  const fv0=calcFV(pv,pmtAnual,0,n);
+  if(fvTarget<=fv0) return 0;
+  // Edge: impossibly high target even at 500%
+  const fvMax=calcFV(pv,pmtAnual,5,n);
+  if(fvTarget>fvMax) return NaN;
+  // Bisect between lo=0 and hi=5 (500% annual)
+  let lo=0, hi=5;
+  for(let k=0;k<120;k++){
+    const mid=(lo+hi)/2;
+    if(calcFV(pv,pmtAnual,mid,n)>=fvTarget) hi=mid; else lo=mid;
+    if(hi-lo<1e-9) break;
   }
-  return r;
+  return (lo+hi)/2;
 }
 
 // Binary search for years
@@ -942,6 +980,440 @@ function onFmtInput(el,id,calcFn){
   const diff=el.value.length-oldLen;
   try{el.setSelectionRange(pos+diff,pos+diff);}catch(e){}
   window[calcFn]();
+}
+
+// ---- PDF EXPORT ----
+function downloadPDF(){
+  const btn=document.getElementById('pdf-btn');
+  btn.classList.add('loading');
+  btn.textContent='Generando PDF...';
+
+  // Gather current values
+  const pv=getRawVal('m-pv');
+  const pmt=getRawVal('m-pmt');
+  const t=parseInt(document.getElementById('m-years').value)||20;
+  const r=parseFloat(document.getElementById('m-rate').value)||10;
+  const i=r/100;
+  const pmtAnual=pmt*12;
+  const fv=calcFV(pv,pmtAnual,i,t);
+  const invested=pv+pmtAnual*t;
+  const gains=fv-invested;
+  const mult=invested>0?fv/invested:0;
+  const renta=fv*(i/12);
+  const cur=currentCurrency;
+
+  // Capture the bar chart as image
+  const chartCanvas=document.getElementById('metaChart');
+  const chartImg=chartCanvas.toDataURL('image/png',0.95);
+
+  // Build PDF
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210, M=18;
+  let y=0;
+
+  // Background
+  doc.setFillColor(14,17,23);
+  doc.rect(0,0,210,297,'F');
+
+  // Header accent line
+  doc.setDrawColor(123,158,197);
+  doc.setLineWidth(0.4);
+  doc.line(M,14,W-M,14);
+
+  // Logo / Badge
+  doc.setFontSize(7.5);
+  doc.setTextColor(123,158,197);
+  doc.setFont('helvetica','bold');
+  doc.text('PARTNERS FINANCE · REPORTE DE META FINANCIERA', M, 21);
+
+  // Date
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('es-CO',{year:'numeric',month:'long',day:'numeric'});
+  doc.setFontSize(7);
+  doc.setTextColor(90,110,136);
+  doc.setFont('helvetica','normal');
+  doc.text(dateStr, W-M, 21, {align:'right'});
+
+  // Title
+  y=34;
+  doc.setFontSize(26);
+  doc.setTextColor(163,189,216);
+  doc.setFont('helvetica','bold');
+  doc.text('Sé el dueño de tu destino', M, y);
+  y+=6;
+  doc.setFontSize(11);
+  doc.setTextColor(90,110,136);
+  doc.setFont('helvetica','normal');
+  doc.text('Proyección de valor futuro · Interés compuesto', M, y);
+
+  // Divider
+  y+=6;
+  doc.setDrawColor(30,32,48);
+  doc.setLineWidth(0.3);
+  doc.line(M, y, W-M, y);
+
+  // Einstein quote box
+  y+=8;
+  doc.setFillColor(26,32,48);
+  doc.roundedRect(M, y, W-M*2, 14, 2, 2, 'F');
+  doc.setFontSize(8.5);
+  doc.setTextColor(212,229,244);
+  doc.setFont('helvetica','italic');
+  doc.text('"El interés compuesto es la octava maravilla del mundo. Quien lo entiende, lo gana."', M+4, y+6);
+  doc.setFontSize(7);
+  doc.setTextColor(90,110,136);
+  doc.setFont('helvetica','normal');
+  doc.text('— Albert Einstein', M+4, y+11);
+
+  // MAIN RESULT BOX
+  y+=20;
+  doc.setFillColor(21,26,42);
+  doc.roundedRect(M, y, W-M*2, 34, 3, 3, 'F');
+  doc.setDrawColor(123,158,197);
+  doc.setLineWidth(0.3);
+  doc.roundedRect(M, y, W-M*2, 34, 3, 3, 'S');
+
+  doc.setFontSize(8);
+  doc.setTextColor(90,110,136);
+  doc.setFont('helvetica','bold');
+  doc.text('VALOR FUTURO PROYECTADO', M+5, y+7);
+
+  doc.setFontSize(28);
+  doc.setTextColor(163,189,216);
+  doc.setFont('helvetica','bold');
+  doc.text(fmt(fv), M+5, y+22);
+
+  doc.setFontSize(8.5);
+  doc.setTextColor(90,110,136);
+  doc.setFont('helvetica','normal');
+  doc.text('en '+t+' años · tasa anual '+r+'% · moneda '+cur, M+5, y+30);
+
+  // METRICS GRID (2x2)
+  y+=40;
+  const colW=(W-M*2)/2-3;
+  const metrics=[
+    {label:'Capital invertido',val:fmt(invested),color:[90,110,136]},
+    {label:'Intereses generados',val:'+'+fmt(gains),color:[74,154,130]},
+    {label:'Multiplicador de capital',val:'×'+mult.toFixed(1)+'x',color:[163,189,216]},
+    {label:'Renta mensual estimada',val:fmt(renta)+'/mes',color:[212,229,244]},
+  ];
+  metrics.forEach((m,idx)=>{
+    const col=idx%2===0?M:M+colW+6;
+    const row=idx<2?y:y+24;
+    doc.setFillColor(26,32,48);
+    doc.roundedRect(col, row, colW, 20, 2, 2, 'F');
+    doc.setFontSize(7);
+    doc.setTextColor(90,110,136);
+    doc.setFont('helvetica','bold');
+    doc.text(m.label.toUpperCase(), col+4, row+7);
+    doc.setFontSize(12);
+    doc.setTextColor(...m.color);
+    doc.setFont('helvetica','bold');
+    doc.text(m.val, col+4, row+16);
+  });
+
+  // INPUTS SUMMARY
+  y+=52;
+  doc.setFontSize(8);
+  doc.setTextColor(123,158,197);
+  doc.setFont('helvetica','bold');
+  doc.text('PARÁMETROS DE CÁLCULO', M, y);
+  y+=4;
+  doc.setDrawColor(30,32,48);
+  doc.line(M, y, W-M, y);
+  y+=5;
+
+  const params=[
+    ['Capital inicial (VP)',fmt(pv)],
+    ['Aporte mensual',fmt(pmt)+'/mes'],
+    ['Aporte anual total',fmt(pmtAnual)+'/año'],
+    ['Horizonte de tiempo',t+' años'],
+    ['Tasa de rentabilidad anual',r+'%'],
+    ['Moneda',cur],
+  ];
+  doc.setFont('helvetica','normal');
+  params.forEach(([label,val],idx)=>{
+    const row=y+idx*7;
+    if(idx%2===0){doc.setFillColor(18,22,34);doc.rect(M,row-3,W-M*2,7,'F');}
+    doc.setFontSize(8);
+    doc.setTextColor(154,174,196);
+    doc.text(label, M+3, row+2);
+    doc.setTextColor(237,241,248);
+    doc.text(val, W-M-3, row+2, {align:'right'});
+  });
+
+  // CHART IMAGE
+  y+=params.length*7+10;
+  doc.setFontSize(8);
+  doc.setTextColor(123,158,197);
+  doc.setFont('helvetica','bold');
+  doc.text('LA BOLA DE NIEVE · CRECIMIENTO AÑO A AÑO', M, y);
+  y+=4;
+  doc.setDrawColor(30,32,48);
+  doc.line(M, y, W-M, y);
+  y+=4;
+
+  const chartH=55;
+  doc.setFillColor(26,32,48);
+  doc.roundedRect(M, y, W-M*2, chartH, 2, 2, 'F');
+  doc.addImage(chartImg,'PNG', M+2, y+2, W-M*2-4, chartH-4);
+
+  // Footer
+  doc.setDrawColor(30,32,48);
+  doc.setLineWidth(0.3);
+  doc.line(M, 282, W-M, 282);
+  doc.setFontSize(7);
+  doc.setTextColor(45,55,75);
+  doc.setFont('helvetica','italic');
+  doc.text('Partners Finance · Herramienta educativa. Los rendimientos históricos no garantizan resultados futuros.', M, 288);
+  doc.text('Generado el '+dateStr, W-M, 288, {align:'right'});
+
+  doc.save('partners-finance-meta-'+cur+'.pdf');
+
+  btn.classList.remove('loading');
+  btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar mi meta en PDF';
+}
+
+// ---- PDF ESFUERZO ----
+function downloadPDFesfuerzo(){
+  const btn=document.getElementById('pdf-btn-e');
+  btn.classList.add('loading');btn.textContent='Generando PDF...';
+
+  const pv=getRawVal('e-pv');
+  const pmt=getRawVal('e-pmt');
+  const t=parseInt(document.getElementById('e-years').value)||20;
+  const goal=getRawVal('e-goal');
+  const pmtAnual=pmt*12;
+  const invested=pv+pmtAnual*t;
+  const rSolved=solveRate(pv,pmtAnual,t,goal);
+  const rPct=isFinite(rSolved)?rSolved*100:NaN;
+  const renta=isFinite(rSolved)?goal*(rSolved/12):NaN;
+  const cur=currentCurrency;
+
+  let marketLabel='—';
+  if(isFinite(rPct)){
+    if(rPct<5) marketLabel='Conservador / CDT';
+    else if(rPct<8) marketLabel='Bonos / Deuda mixta';
+    else if(rPct<12) marketLabel='S&P 500 histórico';
+    else if(rPct<18) marketLabel='Portafolio agresivo';
+    else marketLabel='Muy agresivo / Cripto';
+  }
+
+  const chartImg=document.getElementById('esfuerzoChart').toDataURL('image/png',0.95);
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210, M=18;
+  let y=0;
+
+  // BG
+  doc.setFillColor(14,17,23); doc.rect(0,0,210,297,'F');
+  doc.setDrawColor(123,158,197); doc.setLineWidth(0.4); doc.line(M,14,W-M,14);
+
+  // Header
+  doc.setFontSize(7.5); doc.setTextColor(123,158,197); doc.setFont('helvetica','bold');
+  doc.text('PARTNERS FINANCE · ANÁLISIS DE ESFUERZO REQUERIDO', M, 21);
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('es-CO',{year:'numeric',month:'long',day:'numeric'});
+  doc.setFontSize(7); doc.setTextColor(90,110,136); doc.setFont('helvetica','normal');
+  doc.text(dateStr, W-M, 21, {align:'right'});
+
+  // Title
+  y=34;
+  doc.setFontSize(24); doc.setTextColor(163,189,216); doc.setFont('helvetica','bold');
+  doc.text('¿Qué esfuerzo necesitas?', M, y); y+=6;
+  doc.setFontSize(11); doc.setTextColor(90,110,136); doc.setFont('helvetica','normal');
+  doc.text('Tasa de rentabilidad requerida para alcanzar tu meta', M, y);
+
+  y+=6; doc.setDrawColor(30,32,48); doc.setLineWidth(0.3); doc.line(M,y,W-M,y);
+
+  // Einstein
+  y+=8; doc.setFillColor(26,32,48); doc.roundedRect(M,y,W-M*2,14,2,2,'F');
+  doc.setFontSize(8.5); doc.setTextColor(212,229,244); doc.setFont('helvetica','italic');
+  doc.text('"El interés compuesto es la octava maravilla del mundo. Quien lo entiende, lo gana."', M+4, y+6);
+  doc.setFontSize(7); doc.setTextColor(90,110,136); doc.setFont('helvetica','normal');
+  doc.text('— Albert Einstein', M+4, y+11);
+
+  // Main result
+  y+=20;
+  doc.setFillColor(21,26,42); doc.roundedRect(M,y,W-M*2,38,3,3,'F');
+  doc.setDrawColor(123,158,197); doc.setLineWidth(0.3); doc.roundedRect(M,y,W-M*2,38,3,3,'S');
+  doc.setFontSize(8); doc.setTextColor(90,110,136); doc.setFont('helvetica','bold');
+  doc.text('TASA ANUAL REQUERIDA', M+5, y+8);
+  doc.setFontSize(32); doc.setTextColor(163,189,216); doc.setFont('helvetica','bold');
+  doc.text(isFinite(rPct)?rPct.toFixed(2)+'%':'No alcanzable', M+5, y+24);
+  doc.setFontSize(8.5); doc.setTextColor(90,110,136); doc.setFont('helvetica','normal');
+  doc.text('de rentabilidad anual · equivale a: '+marketLabel, M+5, y+32);
+
+  // Metrics
+  y+=44;
+  const colW=(W-M*2)/2-3;
+  const metrics=[
+    {label:'Meta objetivo',val:fmt(goal),color:[163,189,216]},
+    {label:'Capital que aportarás',val:fmt(invested),color:[90,110,136]},
+    {label:'Equivalente en mercado',val:marketLabel,color:[212,229,244]},
+    {label:'Renta mensual estimada',val:isFinite(renta)?fmt(renta)+'/mes':'—',color:[74,154,130]},
+  ];
+  metrics.forEach((m,idx)=>{
+    const col=idx%2===0?M:M+colW+6;
+    const row=idx<2?y:y+24;
+    doc.setFillColor(26,32,48); doc.roundedRect(col,row,colW,20,2,2,'F');
+    doc.setFontSize(7); doc.setTextColor(90,110,136); doc.setFont('helvetica','bold');
+    doc.text(m.label.toUpperCase(), col+4, row+7);
+    doc.setFontSize(11); doc.setTextColor(...m.color); doc.setFont('helvetica','bold');
+    doc.text(m.val, col+4, row+16);
+  });
+
+  // Params
+  y+=52;
+  doc.setFontSize(8); doc.setTextColor(123,158,197); doc.setFont('helvetica','bold');
+  doc.text('PARÁMETROS DE CÁLCULO', M, y); y+=4;
+  doc.setDrawColor(30,32,48); doc.line(M,y,W-M,y); y+=5;
+  const params=[
+    ['Capital inicial (VP)',fmt(pv)],
+    ['Aporte mensual',fmt(pmt)+'/mes'],
+    ['Horizonte de tiempo',t+' años'],
+    ['Meta financiera',fmt(goal)],
+    ['Moneda',cur],
+  ];
+  doc.setFont('helvetica','normal');
+  params.forEach(([label,val],idx)=>{
+    const row=y+idx*7;
+    if(idx%2===0){doc.setFillColor(18,22,34);doc.rect(M,row-3,W-M*2,7,'F');}
+    doc.setFontSize(8); doc.setTextColor(154,174,196); doc.text(label, M+3, row+2);
+    doc.setTextColor(237,241,248); doc.text(val, W-M-3, row+2, {align:'right'});
+  });
+
+  // Chart
+  y+=params.length*7+10;
+  doc.setFontSize(8); doc.setTextColor(123,158,197); doc.setFont('helvetica','bold');
+  doc.text('COMPARATIVO DE TASAS · ¿CÓMO AFECTA EL ESFUERZO?', M, y); y+=4;
+  doc.setDrawColor(30,32,48); doc.line(M,y,W-M,y); y+=4;
+  const chartH=55;
+  doc.setFillColor(26,32,48); doc.roundedRect(M,y,W-M*2,chartH,2,2,'F');
+  doc.addImage(chartImg,'PNG',M+2,y+2,W-M*2-4,chartH-4);
+
+  // Footer
+  doc.setDrawColor(30,32,48); doc.setLineWidth(0.3); doc.line(M,282,W-M,282);
+  doc.setFontSize(7); doc.setTextColor(45,55,75); doc.setFont('helvetica','italic');
+  doc.text('Partners Finance · Herramienta educativa. Los rendimientos históricos no garantizan resultados futuros.', M, 288);
+  doc.text('Generado el '+dateStr, W-M, 288, {align:'right'});
+
+  doc.save('partners-finance-esfuerzo-'+cur+'.pdf');
+  btn.classList.remove('loading');
+  btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar mi análisis en PDF';
+}
+
+// ---- PDF TIEMPO ----
+function downloadPDFtiempo(){
+  const btn=document.getElementById('pdf-btn-t');
+  btn.classList.add('loading');btn.textContent='Generando PDF...';
+
+  const pv=getRawVal('t-pv');
+  const pmt=getRawVal('t-pmt');
+  const r=parseFloat(document.getElementById('t-rate').value)||10;
+  const goal=getRawVal('t-goal');
+  const i=r/100;
+  const pmtAnual=pmt*12;
+  const ySolved=solveYears(pv,pmtAnual,i,goal);
+  const invested=isFinite(ySolved)?pv+pmtAnual*ySolved:pv;
+  const gains=isFinite(ySolved)?goal-invested:NaN;
+  const renta=goal*(i/12);
+  const cur=currentCurrency;
+
+  const chartImg=document.getElementById('tiempoChart').toDataURL('image/png',0.95);
+  const {jsPDF}=window.jspdf;
+  const doc=new jsPDF({orientation:'portrait',unit:'mm',format:'a4'});
+  const W=210, M=18;
+  let y=0;
+
+  doc.setFillColor(14,17,23); doc.rect(0,0,210,297,'F');
+  doc.setDrawColor(123,158,197); doc.setLineWidth(0.4); doc.line(M,14,W-M,14);
+
+  doc.setFontSize(7.5); doc.setTextColor(123,158,197); doc.setFont('helvetica','bold');
+  doc.text('PARTNERS FINANCE · CÁLCULO DE TIEMPO PARA TU META', M, 21);
+  const now=new Date();
+  const dateStr=now.toLocaleDateString('es-CO',{year:'numeric',month:'long',day:'numeric'});
+  doc.setFontSize(7); doc.setTextColor(90,110,136); doc.setFont('helvetica','normal');
+  doc.text(dateStr, W-M, 21, {align:'right'});
+
+  y=34;
+  doc.setFontSize(24); doc.setTextColor(163,189,216); doc.setFont('helvetica','bold');
+  doc.text('¿En cuánto tiempo llegas?', M, y); y+=6;
+  doc.setFontSize(11); doc.setTextColor(90,110,136); doc.setFont('helvetica','normal');
+  doc.text('Proyección del camino hacia tu libertad financiera', M, y);
+
+  y+=6; doc.setDrawColor(30,32,48); doc.setLineWidth(0.3); doc.line(M,y,W-M,y);
+
+  y+=8; doc.setFillColor(26,32,48); doc.roundedRect(M,y,W-M*2,14,2,2,'F');
+  doc.setFontSize(8.5); doc.setTextColor(212,229,244); doc.setFont('helvetica','italic');
+  doc.text('"El interés compuesto es la octava maravilla del mundo. Quien lo entiende, lo gana."', M+4, y+6);
+  doc.setFontSize(7); doc.setTextColor(90,110,136); doc.setFont('helvetica','normal');
+  doc.text('— Albert Einstein', M+4, y+11);
+
+  y+=20;
+  doc.setFillColor(21,26,42); doc.roundedRect(M,y,W-M*2,38,3,3,'F');
+  doc.setDrawColor(123,158,197); doc.setLineWidth(0.3); doc.roundedRect(M,y,W-M*2,38,3,3,'S');
+  doc.setFontSize(8); doc.setTextColor(90,110,136); doc.setFont('helvetica','bold');
+  doc.text('TIEMPO ESTIMADO PARA ALCANZAR TU META', M+5, y+8);
+  doc.setFontSize(28); doc.setTextColor(163,189,216); doc.setFont('helvetica','bold');
+  doc.text(isFinite(ySolved)?fmtYrs(ySolved):'No alcanzable', M+5, y+24);
+  doc.setFontSize(8.5); doc.setTextColor(90,110,136); doc.setFont('helvetica','normal');
+  doc.text('con una tasa del '+r+'% anual · moneda '+cur, M+5, y+32);
+
+  y+=44;
+  const colW=(W-M*2)/2-3;
+  const metrics=[
+    {label:'Meta objetivo',val:fmt(goal),color:[163,189,216]},
+    {label:'Capital total aportado',val:isFinite(invested)?fmt(invested):'—',color:[90,110,136]},
+    {label:'Intereses generados',val:isFinite(gains)?'+'+fmt(gains):'—',color:[74,154,130]},
+    {label:'Renta mensual estimada',val:fmt(renta)+'/mes',color:[212,229,244]},
+  ];
+  metrics.forEach((m,idx)=>{
+    const col=idx%2===0?M:M+colW+6;
+    const row=idx<2?y:y+24;
+    doc.setFillColor(26,32,48); doc.roundedRect(col,row,colW,20,2,2,'F');
+    doc.setFontSize(7); doc.setTextColor(90,110,136); doc.setFont('helvetica','bold');
+    doc.text(m.label.toUpperCase(), col+4, row+7);
+    doc.setFontSize(11); doc.setTextColor(...m.color); doc.setFont('helvetica','bold');
+    doc.text(m.val, col+4, row+16);
+  });
+
+  y+=52;
+  doc.setFontSize(8); doc.setTextColor(123,158,197); doc.setFont('helvetica','bold');
+  doc.text('PARÁMETROS DE CÁLCULO', M, y); y+=4;
+  doc.setDrawColor(30,32,48); doc.line(M,y,W-M,y); y+=5;
+  const params=[
+    ['Capital inicial (VP)',fmt(pv)],
+    ['Aporte mensual',fmt(pmt)+'/mes'],
+    ['Tasa de rentabilidad anual',r+'%'],
+    ['Meta financiera',fmt(goal)],
+    ['Moneda',cur],
+  ];
+  doc.setFont('helvetica','normal');
+  params.forEach(([label,val],idx)=>{
+    const row=y+idx*7;
+    if(idx%2===0){doc.setFillColor(18,22,34);doc.rect(M,row-3,W-M*2,7,'F');}
+    doc.setFontSize(8); doc.setTextColor(154,174,196); doc.text(label, M+3, row+2);
+    doc.setTextColor(237,241,248); doc.text(val, W-M-3, row+2, {align:'right'});
+  });
+
+  y+=params.length*7+10;
+  doc.setFontSize(8); doc.setTextColor(123,158,197); doc.setFont('helvetica','bold');
+  doc.text('CAMINO HACIA LA LIBERTAD · CRECIMIENTO ACUMULADO', M, y); y+=4;
+  doc.setDrawColor(30,32,48); doc.line(M,y,W-M,y); y+=4;
+  const chartH=60;
+  doc.setFillColor(26,32,48); doc.roundedRect(M,y,W-M*2,chartH,2,2,'F');
+  doc.addImage(chartImg,'PNG',M+2,y+2,W-M*2-4,chartH-4);
+
+  doc.setDrawColor(30,32,48); doc.setLineWidth(0.3); doc.line(M,282,W-M,282);
+  doc.setFontSize(7); doc.setTextColor(45,55,75); doc.setFont('helvetica','italic');
+  doc.text('Partners Finance · Herramienta educativa. Los rendimientos históricos no garantizan resultados futuros.', M, 288);
+  doc.text('Generado el '+dateStr, W-M, 288, {align:'right'});
+
+  doc.save('partners-finance-tiempo-'+cur+'.pdf');
+  btn.classList.remove('loading');
+  btn.innerHTML='<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg> Descargar mi análisis en PDF';
 }
 
 // ---- INIT ----
