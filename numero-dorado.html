@@ -1,0 +1,383 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Número Dorado — Partners Finance</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=DM+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{
+  --pf-navy:#1A1F2E;
+  --pf-navy2:#252C3F;
+  --pf-green:#00C853;
+  --pf-green2:#00A846;
+  --pf-amber:#F5A623;
+  --pf-blue:#2979FF;
+
+  --bg:#F4F5F7;
+  --surface:#FFFFFF;
+  --surface2:#F8F9FB;
+  --surface3:#ECEEF2;
+  --border:#E0E3EA;
+  --border2:#C8CDD8;
+
+  --text:#1A1F2E;
+  --text2:#4A5568;
+  --text3:#8A94A6;
+
+  --red:#E53E3E;--red2:#C53030;
+
+  --radius:8px;--radius-sm:6px;
+}
+*{box-sizing:border-box}
+body{font-family:'Inter',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;margin:0}
+.main{max-width:100%;margin:0;padding:1.5rem 2.5rem 2rem}
+
+/* Header */
+.hero{background:var(--pf-navy);padding:0;overflow:hidden}
+.hero-inner{max-width:960px;margin:0 auto;display:flex;align-items:center;min-height:88px}
+.hero-brand{display:flex;align-items:center;gap:14px;padding:20px 32px}
+.hero-logo{width:44px;height:44px;background:#FFFFFF;border-radius:10px;display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:9px;font-weight:800;color:var(--pf-navy)}
+.hero-brand-text{display:flex;flex-direction:column}
+.hero-brand-name{font-size:19px;font-weight:800;color:#FFFFFF}
+.hero-brand-sub{font-family:'DM Mono',monospace;font-size:10px;letter-spacing:0.1em;text-transform:uppercase;color:rgba(255,255,255,0.4);margin-top:2px}
+.hero-center{flex:1;display:flex;align-items:center;justify-content:flex-end;padding:20px 32px}
+.pf-wordmark{font-size:22px;font-weight:800;color:#FFFFFF;letter-spacing:-0.03em}
+
+/* Quote strip */
+.quote-strip{background:var(--pf-navy2)}
+.quote-inner{max-width:960px;margin:0 auto;padding:11px 32px;text-align:center;font-family:'DM Mono',monospace;font-size:12px;color:rgba(255,255,255,0.6);letter-spacing:0.01em}
+
+/* Description strip */
+.tab-desc-wrap{background:var(--surface2);border-bottom:1px solid var(--border)}
+.tab-desc{max-width:960px;margin:0 auto;padding:12px 32px;font-size:13.5px;color:var(--text2);line-height:1.6}
+
+.page-inner{max-width:960px;margin:0 auto}
+
+/* Panel */
+.panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.04)}
+.panel-title{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:var(--text3);font-weight:500;margin-bottom:1.25rem;display:flex;align-items:center;gap:8px}
+.panel-title::after{content:'';flex:1;height:1px;background:var(--border)}
+
+/* Result panel */
+.result-panel{background:var(--pf-navy);border-radius:var(--radius);padding:1.5rem;overflow:hidden}
+.result-mode{font-family:'DM Mono',monospace;font-size:9px;letter-spacing:0.16em;text-transform:uppercase;color:rgba(255,255,255,0.35)}
+.result-label{font-size:13px;color:rgba(255,255,255,0.5);margin:0.4rem 0}
+.result-big{font-family:'Inter',sans-serif;font-size:clamp(30px,5vw,46px);font-weight:800;color:#FFFFFF;letter-spacing:-0.03em;line-height:1;margin-bottom:0.4rem}
+.result-unit{font-family:'DM Mono',monospace;font-size:11px;color:rgba(255,255,255,0.3);margin-bottom:1.25rem}
+.metrics{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.metric{background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.06);border-radius:var(--radius-sm);padding:10px 12px}
+.metric-lbl{font-family:'DM Mono',monospace;font-size:8.5px;letter-spacing:0.12em;text-transform:uppercase;color:rgba(255,255,255,0.3)}
+.metric-val{font-size:14px;font-weight:700;color:rgba(255,255,255,0.9)}
+.metric-val.green{color:var(--pf-green)}
+
+/* Inputs */
+.field{margin-bottom:1.25rem}
+.field-label{font-size:12.5px;font-weight:600;color:var(--text)}
+.field-sub{font-size:11px;color:var(--text3);margin:2px 0 8px}
+.input-wrap{position:relative}
+.input-prefix{position:absolute;left:11px;top:50%;transform:translateY(-50%);font-family:'DM Mono',monospace;font-size:13px;color:var(--text3)}
+.input-suffix{position:absolute;right:11px;top:50%;transform:translateY(-50%);font-family:'DM Mono',monospace;font-size:11px;color:var(--text3)}
+.fmt-display{width:100%;background:var(--surface3);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 55px 10px 30px;font-family:'DM Mono',monospace;font-size:15px;font-weight:500;color:var(--text);outline:none;transition:border-color 0.15s}
+.fmt-display:focus{border-color:var(--pf-navy);background:#fff}
+.field-tip-box{background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:8px 12px;margin-top:6px;font-size:11px;color:var(--text3);line-height:1.6;display:flex;gap:6px;align-items:flex-start}
+.tip-icon{flex-shrink:0;width:15px;height:15px;border-radius:50%;background:var(--surface3);color:var(--text3);font-family:'DM Mono',monospace;font-size:9px;font-weight:500;display:flex;align-items:center;justify-content:center;margin-top:1px}
+
+/* Layout */
+.layout{display:grid;grid-template-columns:3fr 2fr;gap:1.25rem;margin-bottom:1.25rem}
+@media(max-width:900px){.layout{grid-template-columns:1fr}}
+
+/* Chart panel */
+.chart-panel{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;box-shadow:0 1px 3px rgba(0,0,0,0.04);margin-bottom:1.25rem}
+.chart-header{display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;padding-bottom:0.75rem;border-bottom:1px solid var(--border);flex-wrap:wrap;gap:8px}
+.chart-title-txt{font-size:11px;font-weight:700;color:var(--text);text-transform:uppercase;letter-spacing:0.08em;font-family:'DM Mono',monospace}
+.chart-legend{display:flex;gap:14px;font-family:'DM Mono',monospace;font-size:10px;color:var(--text3)}
+.leg-dot{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px;vertical-align:middle}
+.chart-wrap{position:relative;width:100%;height:220px}
+
+/* Explainer panels */
+.explain-panel{margin-bottom:1.25rem}
+.explain-kid{font-size:14.5px;line-height:1.8;color:var(--text2)}
+.explain-kid strong{color:var(--text)}
+.jar-row{display:flex;gap:14px;align-items:flex-start;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm);padding:14px;margin:14px 0}
+.jar-emoji{font-size:26px;line-height:1}
+.jar-text{font-size:13px;color:var(--text2);line-height:1.6}
+
+.refs{display:flex;flex-direction:column;gap:10px}
+.ref-item{display:flex;gap:12px;padding:12px;background:var(--surface2);border:1px solid var(--border);border-radius:var(--radius-sm)}
+.ref-year{font-family:'DM Mono',monospace;font-size:11px;font-weight:700;color:var(--pf-navy);background:var(--surface3);border-radius:4px;padding:3px 8px;height:fit-content;flex-shrink:0}
+.ref-body{font-size:12.5px;color:var(--text2);line-height:1.6}
+.ref-body b{color:var(--text)}
+.ref-src{font-family:'DM Mono',monospace;font-size:10px;color:var(--text3);margin-top:3px}
+
+.pdf-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;margin-top:1rem;padding:11px 20px;background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.15);border-radius:var(--radius-sm);font-family:'Inter',sans-serif;font-size:12px;font-weight:600;color:rgba(255,255,255,0.7);cursor:pointer;transition:all 0.2s}
+.pdf-btn:hover{background:var(--pf-green);color:var(--pf-navy);border-color:var(--pf-green)}
+
+footer{text-align:center;padding:2rem 1.5rem;border-top:1px solid var(--border);background:var(--surface);font-family:'DM Mono',monospace;font-size:10.5px;color:var(--text3)}
+footer span{color:var(--pf-navy);font-weight:600}
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <div class="hero-brand">
+      <div class="hero-logo">PF</div>
+      <div class="hero-brand-text">
+        <div class="hero-brand-name">Número Dorado</div>
+        <div class="hero-brand-sub">Regla del 4% · Trinity Study</div>
+      </div>
+    </div>
+    <div class="hero-center">
+      <div class="pf-wordmark">Partners Finance</div>
+    </div>
+  </div>
+</div>
+
+<div class="quote-strip">
+  <div class="quote-inner">"No necesitas ser rico. Necesitas que tu dinero pueda sostenerte." — el número dorado es esa cifra exacta.</div>
+</div>
+
+<div class="tab-desc-wrap">
+  <div class="tab-desc">En esta herramienta tienes que ingresar el ingreso mensual con el que quieres vivir de tus inversiones, y descubrirás el capital exacto que necesitas acumular, según la Regla del 4% (Trinity Study).</div>
+</div>
+
+<div class="main">
+  <div class="page-inner">
+
+    <div class="layout">
+      <div>
+        <div class="panel">
+          <div class="panel-title">Tu meta de ingresos</div>
+
+          <div class="field">
+            <div class="field-label">1. ¿Con cuánto quieres vivir cada mes?</div>
+            <div class="field-sub">El ingreso mensual que tus inversiones te deben entregar, sin tocar el capital.</div>
+            <div class="input-wrap">
+              <span class="input-prefix">$</span>
+              <input type="text" class="fmt-display" id="ingreso-mensual" value="5,000,000" oninput="onFmtInput(this,'ingreso-mensual','calcular')">
+              <span class="input-suffix">COP</span>
+            </div>
+            <div class="field-tip-box">
+              <span class="tip-icon">i</span>
+              Piensa en tu gasto de vida real: arriendo, comida, transporte, gustos — no solo lo básico.
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div>
+        <div class="result-panel">
+          <div class="result-mode">Regla del 4% · Trinity Study</div>
+          <div class="result-label">Capital que necesitas acumular</div>
+          <div class="result-big" id="resultado">$0</div>
+          <div class="result-unit">tu número dorado</div>
+          <div class="metrics">
+            <div class="metric">
+              <div class="metric-lbl">Ingreso anual objetivo</div>
+              <div class="metric-val" id="m-anual">$0</div>
+            </div>
+            <div class="metric">
+              <div class="metric-lbl">Múltiplo aplicado</div>
+              <div class="metric-val">25x</div>
+            </div>
+            <div class="metric">
+              <div class="metric-lbl">Tasa de retiro anual</div>
+              <div class="metric-val green">4%</div>
+            </div>
+            <div class="metric">
+              <div class="metric-lbl">Horizonte respaldado</div>
+              <div class="metric-val">30 años</div>
+            </div>
+          </div>
+          <button class="pdf-btn" onclick="downloadPDF()">
+            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Descargar en PDF
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <div class="chart-panel">
+      <div class="chart-header">
+        <div class="chart-title-txt">Probabilidad de éxito según la tasa de retiro</div>
+        <div class="chart-legend"><span><span class="leg-dot" style="background:#1A1F2E"></span>Datos históricos 1926–2009, Trinity Study</span></div>
+      </div>
+      <div class="chart-wrap"><canvas id="chartExito"></canvas></div>
+    </div>
+
+    <div class="panel explain-panel">
+      <div class="panel-title">¿De dónde sale el 4%? — explicado fácil</div>
+      <div class="explain-kid">
+        <p>Imagina que tienes un <strong>frasco grande de dinero</strong> y quieres que te alcance para vivir, digamos, <strong>30 años</strong> — casi lo que dura crecer desde niño hasta ser un adulto con hijos propios.</p>
+        <div class="jar-row">
+          <div class="jar-emoji">🏺</div>
+          <div class="jar-text">Si sacas mucho dinero del frasco cada año, se vacía rápido. Si sacas muy poquito, vives con menos de lo que podrías. La pregunta es: <strong>¿cuánto puedo sacar cada año sin que el frasco se quede vacío?</strong></div>
+        </div>
+        <p>Unos profesores universitarios (no un banco, ni una influencer, sino investigadores académicos) tomaron <strong>casi 100 años de historia real del mercado</strong> — desde 1926 — y probaron miles de escenarios: "¿y si alguien se hubiera retirado en 1929? ¿y en 1970? ¿y en 2000?". En cada escenario probaron sacar 3%, 4%, 5%, 6% del frasco cada año.</p>
+        <p>Encontraron algo curioso: si sacas <strong>4 de cada 100 pesos del frasco en el primer año</strong>, y luego ajustas esa cantidad solo por el aumento del costo de vida (inflación), en <strong>95 a 100 de cada 100 escenarios históricos</strong> el frasco duró los 30 años completos, sin vaciarse. Por eso el 4% se volvió "el número mágico" — no es una corazonada, es el resultado de poner a prueba casi un siglo de historia real del mercado.</p>
+        <p>Y como el 4% es exactamente <strong>1 de cada 25</strong>, la cuenta se puede voltear al revés: si sabes cuánto quieres gastar al año, tu frasco necesita ser <strong>25 veces ese gasto anual</strong>. Esa es toda la matemática detrás de esta calculadora.</p>
+      </div>
+    </div>
+
+    <div class="panel explain-panel">
+      <div class="panel-title">Fuentes de esta investigación</div>
+      <div class="refs">
+        <div class="ref-item">
+          <div class="ref-year">1994</div>
+          <div class="ref-body">
+            <b>William Bengen</b> — planificador financiero estadounidense, publicó el primer estudio que probó tasas de retiro contra datos históricos del mercado y acuñó la idea del "SAFEMAX" (la tasa máxima segura).
+            <div class="ref-src">Journal of Financial Planning — "Determining Withdrawal Rates Using Historical Data"</div>
+          </div>
+        </div>
+        <div class="ref-item">
+          <div class="ref-year">1998</div>
+          <div class="ref-body">
+            <b>Cooley, Hubbard &amp; Walz</b> — tres profesores de Trinity University (Texas) ampliaron el trabajo de Bengen probando distintas mezclas de acciones y bonos contra periodos históricos de 15 a 30 años. Este es el estudio que la industria bautizó como el <b>"Trinity Study"</b>.
+            <div class="ref-src">Journal of the American Association of Individual Investors (AAII) — "Retirement Spending: Choosing a Sustainable Withdrawal Rate"</div>
+          </div>
+        </div>
+        <div class="ref-item">
+          <div class="ref-year">2011</div>
+          <div class="ref-body">
+            Los mismos autores publicaron una <b>actualización</b> extendiendo los datos hasta 2009, confirmando que la tasa del 4% se mantenía como un punto de referencia históricamente sólido.
+            <div class="ref-src">Trinity University — actualización del estudio original</div>
+          </div>
+        </div>
+      </div>
+      <div class="field-tip-box" style="margin-top:14px">
+        <span class="tip-icon">i</span>
+        Esta calculadora usa únicamente la metodología clásica del 4% para mantenerla simple. Instituciones como Morningstar publican hoy versiones más conservadoras o dinámicas (entre 3.9% y 5.7%, según el enfoque) — si quieres comparar esos escenarios, puedes pedírselo a tu asesor de Partners Finance.
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<footer>
+  <p>Partners Finance · Herramienta educativa · <span>No es asesoría financiera individual</span></p>
+  <p style="margin-top:4px">Basada en investigación académica pública (Bengen 1994, Trinity Study 1998/2011). Los resultados históricos no garantizan resultados futuros.</p>
+  <p style="margin-top:10px;opacity:0.6">Creado by leoforerov</p>
+</footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+<script>
+function fmtThousands(n){
+  if(isNaN(n)) return '';
+  return n.toLocaleString('es-CO',{maximumFractionDigits:0});
+}
+function getRawVal(id){
+  const el=document.getElementById(id);
+  const raw=el.value.replace(/[.,\s]/g,'').replace(/[^0-9]/g,'');
+  return parseFloat(raw)||0;
+}
+function onFmtInput(el,id,calcFn){
+  const raw=el.value.replace(/[.,\s]/g,'').replace(/[^0-9]/g,'');
+  const num=parseFloat(raw)||0;
+  el.value=fmtThousands(num)||'';
+  window[calcFn]();
+}
+function fmtCOP(n){
+  return '$'+Math.round(n).toLocaleString('es-CO');
+}
+
+function calcular(){
+  const mensual = getRawVal('ingreso-mensual');
+  const anual = mensual * 12;
+  const numeroDorado = anual * 25; // regla del 4% = 25x el gasto anual
+
+  document.getElementById('resultado').textContent = fmtCOP(numeroDorado);
+  document.getElementById('m-anual').textContent = fmtCOP(anual);
+}
+
+document.getElementById('ingreso-mensual').addEventListener('input', calcular);
+calcular();
+
+// Gráfico de probabilidad de éxito (datos del Trinity Study)
+const gridColor = 'rgba(26,31,46,0.08)';
+const tickColor = 'rgba(26,31,46,0.45)';
+new Chart(document.getElementById('chartExito'), {
+  type:'bar',
+  data:{
+    labels:['3%','4%','5%','6%'],
+    datasets:[{
+      data:[100,97,83,68],
+      backgroundColor: ctx => ctx.dataIndex===1 ? '#00A846' : '#1A1F2E',
+      borderRadius:4,
+      maxBarThickness:56
+    }]
+  },
+  options:{
+    responsive:true, maintainAspectRatio:false,
+    plugins:{
+      legend:{display:false},
+      tooltip:{backgroundColor:'#1A1F2E',titleColor:'#FFFFFF',bodyColor:'rgba(255,255,255,0.65)',borderColor:'rgba(255,255,255,0.15)',borderWidth:0.5,
+        callbacks:{label: c => c.parsed.y + '% de escenarios históricos exitosos'}}
+    },
+    scales:{
+      x:{grid:{display:false},ticks:{color:tickColor,font:{size:10,family:'DM Mono'}}},
+      y:{min:0,max:100,grid:{color:gridColor},ticks:{color:tickColor,font:{size:9},callback:v=>v+'%'}}
+    }
+  }
+});
+
+function downloadPDF(){
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({orientation:'portrait', unit:'mm', format:'a4'});
+  const W = 210, M = 18;
+  let y = 20;
+
+  doc.setFillColor(248,249,251); doc.rect(0,0,210,297,'F');
+  doc.setDrawColor(26,31,46); doc.setLineWidth(0.5); doc.line(M,14,W-M,14);
+
+  doc.setFontSize(9); doc.setTextColor(138,148,166); doc.setFont('helvetica','bold');
+  doc.text('PARTNERS FINANCE · NUMERO DORADO', M, 22);
+
+  y = 32;
+  doc.setFillColor(26,31,46); doc.roundedRect(M,y,W-M*2,38,3,3,'F');
+  doc.setFontSize(9); doc.setTextColor(163,189,216); doc.setFont('helvetica','normal');
+  doc.text('CAPITAL QUE NECESITAS ACUMULAR', M+8, y+11);
+  doc.setFontSize(26); doc.setTextColor(255,255,255); doc.setFont('helvetica','bold');
+  doc.text(document.getElementById('resultado').textContent, M+8, y+27);
+
+  y += 50;
+  const mensual = fmtCOP(getRawVal('ingreso-mensual'));
+  const anual = document.getElementById('m-anual').textContent;
+  const rows = [
+    ['Ingreso mensual objetivo', mensual],
+    ['Ingreso anual objetivo', anual],
+    ['Tasa de retiro anual (regla del 4%)', '4%'],
+    ['Multiplo aplicado sobre el gasto anual', '25x'],
+    ['Horizonte respaldado por el estudio', '30 anios']
+  ];
+  doc.setFontSize(10);
+  rows.forEach((r,idx)=>{
+    if(idx%2===0){ doc.setFillColor(242,243,246); doc.rect(M,y-4,W-M*2,8,'F'); }
+    doc.setTextColor(74,85,104); doc.setFont('helvetica','normal'); doc.text(r[0], M+3, y+1.5);
+    doc.setTextColor(26,31,46); doc.setFont('helvetica','bold'); doc.text(r[1], W-M-3, y+1.5, {align:'right'});
+    y += 8;
+  });
+
+  y += 8;
+  doc.setFontSize(9); doc.setTextColor(74,85,104); doc.setFont('helvetica','bold');
+  doc.text('De donde sale este numero', M, y); y += 6;
+  doc.setFont('helvetica','normal'); doc.setFontSize(8.5); doc.setTextColor(90,100,120);
+  const parrafo = 'Basado en Bengen (1994) y el "Trinity Study" de Cooley, Hubbard y Walz (1998, Trinity University), actualizado en 2011. El estudio probo miles de periodos historicos de 30 anios del mercado desde 1926 y encontro que retirar 4% del capital el primer anio, ajustado por inflacion despues, tuvo entre 95% y 100% de exito historico.';
+  const lineas = doc.splitTextToSize(parrafo, W-M*2);
+  doc.text(lineas, M, y);
+  y += lineas.length*4.2 + 10;
+
+  doc.setDrawColor(224,227,234); doc.setLineWidth(0.3); doc.line(M,y,W-M,y); y+=6;
+  doc.setFontSize(7.5); doc.setTextColor(138,148,166); doc.setFont('helvetica','normal');
+  doc.text('Partners Finance · Herramienta educativa · No es asesoria financiera individual', M, y);
+  y += 4;
+  doc.text('Creado by leoforerov', M, y);
+
+  doc.save('numero-dorado-partners-finance.pdf');
+}
+</script>
+</body>
+</html>
